@@ -35,8 +35,10 @@ typedef struct avlnode {
 	void *data;
 } avlnode;
 
+typedef	int (*avltree_compare_func_t)(const void *, const void *);
+
 typedef struct {
-	int (*compare)(const void *, const void *);
+	avltree_compare_func_t compare;
 	void (*print)(void *);
 	void (*destroy)(void *);
 
@@ -56,7 +58,7 @@ typedef struct {
 #define AVL_ISEMPTY(avlt) ((avlt)->root.left == &(avlt)->nil && (avlt)->root.right == &(avlt)->nil)
 #define AVL_APPLY(avlt, func, cookie, order) avl_apply((avlt), (avlt)->root.left, (func), (cookie), (order))
 
-avltree *avl_create(int (*compare_func)(const void *, const void *), void (*destroy_func)(void *));
+avltree *avl_create(avltree_compare_func_t compare_func, void (*destroy_func)(void *));
 void avl_destroy(avltree *avlt);
 
 avlnode *avl_find(avltree *avlt, void *data);
