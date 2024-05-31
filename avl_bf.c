@@ -18,7 +18,7 @@ static avlnode *fix_delete_rightimbalance(avltree *avlt, avlnode *p);
 static int check_order(avltree *avlt, avlnode *n, void *min, void *max);
 static int check_height(avltree *avlt, avlnode *n);
 
-static void print(avltree *avlt, avlnode *n, void (*print_func)(void *), int depth, char *label);
+static void print(avltree *avlt, avlnode *n, void (*print_func)(void *), int depth, const char *label);
 static void destroy(avltree *avlt, avlnode *n);
 
 /*
@@ -626,7 +626,7 @@ int check_height(avltree *avlt, avlnode *n)
 /*
  * print node recursively
  */
-void print(avltree *avlt, avlnode *n, void (*print_func)(void *), int depth, char *label)
+void print(avltree *avlt, avlnode *n, void (*print_func)(void *), int depth, const char *label)
 {
 	if (n != AVL_NIL(avlt)) {
 		print(avlt, n->right, print_func, depth + 1, "R");
