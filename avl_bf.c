@@ -25,7 +25,7 @@ static void destroy(avltree *avlt, avlnode *n);
  * construction
  * return NULL if out of memory
  */
-avltree *avl_create(avltree_compare_func_t compare_func, void (*destroy_func)(void *))
+avltree *avl_create(avltree_compare_func_t compare_func, avltree_destroy_func_t destroy_func)
 {
 	avltree *avlt;
 
