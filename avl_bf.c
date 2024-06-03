@@ -66,7 +66,7 @@ void avl_destroy(avltree *avlt)
  * look up
  * return NULL if not found
  */
-avlnode *avl_find(avltree *avlt, void *data)
+avlnode *avl_find(avltree *avlt, const void *data)
 {
 	avlnode *p;
 

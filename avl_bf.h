@@ -62,7 +62,7 @@ typedef struct {
 avltree *avl_create(avltree_compare_func_t compare_func, avltree_destroy_func_t destroy_func);
 void avl_destroy(avltree *avlt);
 
-avlnode *avl_find(avltree *avlt, void *data);
+avlnode *avl_find(avltree *avlt, const void *data);
 avlnode *avl_successor(avltree *avlt, avlnode *node);
 
 int avl_apply(avltree *avlt, avlnode *node, int (*func)(void *, void *), void *cookie, enum avltraversal order);
