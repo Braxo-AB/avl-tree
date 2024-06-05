@@ -88,16 +88,19 @@ avlnode *avl_successor(avltree *avlt, avlnode *node)
 
 	if (p != AVL_NIL(avlt)) {
 		/* move down until we find it */
-		for ( ; p->left != AVL_NIL(avlt); p = p->left)
-			;
-	} else {
-		/* move up until we find it or hit the root */
-		for (p = node->parent; node == p->right; node = p, p = p->parent)
-			;
-
-		if (p == AVL_ROOT(avlt))
-			p = NULL; /* not found */
+		while (p->left != AVL_NIL(avlt))
+			p = p->left;
+		return p;
 	}
+
+	/* move up until we find it or hit the root */
+	p = node->parent;
+	while (node == p->right) {
+		node = p;
+		p = p->parent;
+	}
+	if (p == AVL_ROOT(avlt))
+		p = NULL; /* not found */
 
 	return p;
 }
@@ -439,6 +442,25 @@ avlnode *rotate_right(avltree *avlt, avlnode *x)
 	return y;
 }
 
+static void
+update_bf(avlnode* p, int oldbf)
+{
+	p->bf = 0;
+	switch (oldbf) {
+		case -1:
+			p->left->bf = 0;
+			p->right->bf = 1;
+			break;
+		case 0:
+			p->left->bf = p->right->bf = 0;
+			break;
+		case 1:
+			p->left->bf = -1;
+			p->right->bf = 0;
+			break;
+	}
+}
+
 /*
  * fix left imbalance after insertion
  * return the new root
@@ -450,21 +472,14 @@ avlnode *fix_insert_leftimbalance(avltree *avlt, avlnode *p)
 	if (p->left->bf == p->bf) { /* -1, -1 */
 		p = rotate_right(avlt, p);
 		p->bf = p->right->bf = 0;
-	} else { /* 1, -1 */
-		int oldbf = p->left->right->bf;
-		rotate_left(avlt, p->left);
-		p = rotate_right(avlt, p);
-		p->bf = 0;
-		if (oldbf == -1) {
-			p->left->bf = 0;
-			p->right->bf = 1;
-		} else if (oldbf == 1) {
-			p->left->bf = -1;
-			p->right->bf = 0;
-		} else if (oldbf == 0) {
-			p->left->bf = p->right->bf = 0;
-		}
+		return p;
 	}
+
+	/* 1, -1 */
+	int oldbf = p->left->right->bf;
+	rotate_left(avlt, p->left);
+	p = rotate_right(avlt, p);
+	update_bf(p, oldbf);
 	return p;
 }
 
@@ -477,21 +492,14 @@ avlnode *fix_insert_rightimbalance(avltree *avlt, avlnode *p)
 	if (p->right->bf == p->bf) { /* 1, 1 */
 		p = rotate_left(avlt, p);
 		p->bf = p->left->bf = 0;
-	} else { /* -1, 1 */
-		int oldbf = p->right->left->bf;
-		rotate_right(avlt, p->right);
-		p = rotate_left(avlt, p);
-		p->bf = 0;
-		if (oldbf == -1) {
-			p->left->bf = 0;
-			p->right->bf = 1;
-		} else if (oldbf == 1) {
-			p->left->bf = -1;
-			p->right->bf = 0;
-		} else if (oldbf == 0) {
-			p->left->bf = p->right->bf = 0;
-		}
+		return p;
 	}
+
+	/* -1, 1 */
+	int oldbf = p->right->left->bf;
+	rotate_right(avlt, p->right);
+	p = rotate_left(avlt, p);
+	update_bf(p, oldbf);
 	return p;
 }
 
@@ -501,28 +509,23 @@ avlnode *fix_insert_rightimbalance(avltree *avlt, avlnode *p)
  */
 avlnode *fix_delete_leftimbalance(avltree *avlt, avlnode *p)
 {
-	if (p->left->bf == -1) {
-		p = rotate_right(avlt, p);
-		p->bf = p->right->bf = 0;
-	} else if (p->left->bf == 0) {
-		p = rotate_right(avlt, p);
-		p->bf = 1;
-		p->right->bf = -1;
-	} else if (p->left->bf == 1) {
-		int oldbf = p->left->right->bf;
-		rotate_left(avlt, p->left);
-		p = rotate_right(avlt, p);
-		p->bf = 0;
-		if (oldbf == -1) {
-			p->left->bf = 0;
-			p->right->bf = 1;
-		} else if (oldbf == 1) {
-			p->left->bf = -1;
-			p->right->bf = 0;
-		} else if (oldbf == 0) {
-			p->left->bf = p->right->bf = 0;
-		}
+	switch (p->left->bf) {
+		case -1:
+			p = rotate_right(avlt, p);
+			p->bf = p->right->bf = 0;
+			break;
+		case 0:
+			p = rotate_right(avlt, p);
+			p->bf = 1;
+			p->right->bf = -1;
+			break;
+		case 1: ;
+			int oldbf = p->left->right->bf;
+			rotate_left(avlt, p->left);
+			p = rotate_right(avlt, p);
+			update_bf(p, oldbf);
 	}
+
 	return p;
 }
 
@@ -532,27 +535,21 @@ avlnode *fix_delete_leftimbalance(avltree *avlt, avlnode *p)
  */
 avlnode *fix_delete_rightimbalance(avltree *avlt, avlnode *p)
 {
-	if (p->right->bf == 1) {
-		p = rotate_left(avlt, p);
-		p->bf = p->left->bf = 0;
-	} else if (p->right->bf == 0) {
-		p = rotate_left(avlt, p);
-		p->bf = -1;
-		p->left->bf = 1;
-	} else if (p->right->bf == -1) {
-		int oldbf = p->right->left->bf;
-		rotate_right(avlt, p->right);
-		p = rotate_left(avlt, p);
-		p->bf = 0;
-		if (oldbf == -1) {
-			p->left->bf = 0;
-			p->right->bf = 1;
-		} else if (oldbf == 1) {
-			p->left->bf = -1;
-			p->right->bf = 0;
-		} else if (oldbf == 0) {
-			p->left->bf = p->right->bf = 0;
-		}
+	switch (p->right->bf) {
+		case 1:
+			p = rotate_left(avlt, p);
+			p->bf = p->left->bf = 0;
+			break;
+		case 0:
+			p = rotate_left(avlt, p);
+			p->bf = -1;
+			p->left->bf = 1;
+			break;
+		case -1: ;
+			int oldbf = p->right->left->bf;
+			rotate_right(avlt, p->right);
+			p = rotate_left(avlt, p);
+			update_bf(p, oldbf);
 	}
 	return p;
 }
