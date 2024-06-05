@@ -111,7 +111,7 @@ avlnode *avl_successor(avltree *avlt, avlnode *node)
  * apply func
  * return non-zero if error
  */
-int avl_apply(avltree *avlt, avlnode *node, int (*func)(void *, void *), void *cookie, enum avltraversal order)
+int avl_apply(avltree *avlt, avlnode *node, avltree_apply_func_t func, void *cookie, enum avltraversal order)
 {
 	int err;
 
