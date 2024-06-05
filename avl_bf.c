@@ -27,10 +27,8 @@ static void destroy(avltree *avlt, avlnode *n);
  */
 avltree *avl_create(avltree_compare_func_t compare_func, avltree_destroy_func_t destroy_func)
 {
-	avltree *avlt;
-
-	avlt = (avltree *) malloc(sizeof(avltree));
-	if (avlt == NULL)
+	avltree* avlt = (avltree *) malloc(sizeof(avltree));
+	if (!avlt)
 		return NULL; /* out of memory */
 
 	avlt->compare = compare_func;
@@ -68,13 +66,10 @@ void avl_destroy(avltree *avlt)
  */
 avlnode *avl_find(avltree *avlt, const void *data)
 {
-	avlnode *p;
-
-	p = AVL_FIRST(avlt);
+	avlnode* p = AVL_FIRST(avlt);
 
 	while (p != AVL_NIL(avlt)) {
-		int cmp;
-		cmp = avlt->compare(data, p->data);
+		int cmp = avlt->compare(data, p->data);
 		if (cmp == 0)
 			return p; /* found */
 		p = (cmp < 0) ? p->left : p->right;
@@ -89,16 +84,16 @@ avlnode *avl_find(avltree *avlt, const void *data)
  */
 avlnode *avl_successor(avltree *avlt, avlnode *node)
 {
-	avlnode *p;
-
-	p = node->right;
+	avlnode* p = node->right;
 
 	if (p != AVL_NIL(avlt)) {
 		/* move down until we find it */
-		for ( ; p->left != AVL_NIL(avlt); p = p->left) ;
+		for ( ; p->left != AVL_NIL(avlt); p = p->left)
+			;
 	} else {
 		/* move up until we find it or hit the root */
-		for (p = node->parent; node == p->right; node = p, p = p->parent) ;
+		for (p = node->parent; node == p->right; node = p, p = p->parent)
+			;
 
 		if (p == AVL_ROOT(avlt))
 			p = NULL; /* not found */
@@ -113,20 +108,20 @@ avlnode *avl_successor(avltree *avlt, avlnode *node)
  */
 int avl_apply(avltree *avlt, avlnode *node, avltree_apply_func_t func, void *cookie, enum avltraversal order)
 {
-	int err;
+	if (node == AVL_NIL(avlt))
+		return 0;
 
-	if (node != AVL_NIL(avlt)) {
-		if (order == PREORDER && (err = func(node->data, cookie)) != 0) /* preorder */
-			return err;
-		if ((err = avl_apply(avlt, node->left, func, cookie, order)) != 0) /* left */
-			return err;
-		if (order == INORDER && (err = func(node->data, cookie)) != 0) /* inorder */
-			return err;
-		if ((err = avl_apply(avlt, node->right, func, cookie, order)) != 0) /* right */
-			return err;
-		if (order == POSTORDER && (err = func(node->data, cookie)) != 0) /* postorder */
-			return err;
-	}
+	int err;
+	if (order == PREORDER && (err = func(node->data, cookie)) != 0) /* preorder */
+		return err;
+	if ((err = avl_apply(avlt, node->left, func, cookie, order)) != 0) /* left */
+		return err;
+	if (order == INORDER && (err = func(node->data, cookie)) != 0) /* inorder */
+		return err;
+	if ((err = avl_apply(avlt, node->right, func, cookie, order)) != 0) /* right */
+		return err;
+	if (order == POSTORDER && (err = func(node->data, cookie)) != 0) /* postorder */
+		return err;
 
 	return 0;
 }
@@ -154,9 +149,7 @@ int avl_check_order(avltree *avlt, void *min, void *max)
  */
 int avl_check_height(avltree *avlt)
 {
-	int height;
-	height = check_height(avlt, AVL_FIRST(avlt));
-
+	int height = check_height(avlt, AVL_FIRST(avlt));
 	return (height < 0) ? 0 : 1;
 }
 
@@ -166,17 +159,13 @@ int avl_check_height(avltree *avlt)
  */
 avlnode *avl_insert(avltree *avlt, void *data)
 {
-	avlnode *current, *parent;
-	avlnode *new_node;
-
 	/* do a binary search to find where it should be */
 
-	current = AVL_FIRST(avlt);
-	parent = AVL_ROOT(avlt);
+	avlnode* current = AVL_FIRST(avlt);
+	avlnode* parent = AVL_ROOT(avlt);
 
 	while (current != AVL_NIL(avlt)) {
-		int cmp;
-		cmp = avlt->compare(data, current->data);
+		int cmp = avlt->compare(data, current->data);
 
 		#ifndef AVL_DUP
 		if (cmp == 0) {
@@ -192,10 +181,11 @@ avlnode *avl_insert(avltree *avlt, void *data)
 	
 	/* replace the termination NIL pointer with the new node pointer */
 
-	current = new_node = (avlnode *) malloc(sizeof(avlnode));
-	if (current == NULL)
+	avlnode* new_node = (avlnode *) malloc(sizeof(avlnode));
+	if (!new_node)
 		return NULL; /* out of memory */
 
+	current = new_node;
 	current->left = current->right = AVL_NIL(avlt);
 	current->parent = parent;
 	current->bf = 0;
@@ -279,11 +269,8 @@ avlnode *avl_insert(avltree *avlt, void *data)
  */
 void *avl_delete(avltree *avlt, avlnode *node, int keep)
 {
-	avlnode *current, *parent;
 	avlnode *target;
-	void *data;
-
-	data = node->data;
+	void* data = node->data;
 
 	/* choose node's in-order successor if it has two children */
 	
@@ -315,8 +302,8 @@ void *avl_delete(avltree *avlt, avlnode *node, int keep)
 	 * 2. rebalance if the balance factor of parent node temporarily becomes +2 or -2;
 	 * 3. terminate if the height of that parent subtree remains unchanged.
 	 */
-	current = target;
-	parent = current->parent;
+	avlnode* current = target;
+	avlnode* parent = current->parent;
 
 	while (current != AVL_FIRST(avlt)) { /* Loop (possibly up to the root) */
 		if (current == parent->left) { /* The height of left subtree of parent subtree decreases */
@@ -376,9 +363,7 @@ void *avl_delete(avltree *avlt, avlnode *node, int keep)
 
 	/* replace the target node with its child (may be NIL) */
 
-	avlnode *child; /* child of target */
-
-	child = (target->left == AVL_NIL(avlt)) ? target->right : target->left; /* child may be NIL */
+	avlnode* child = (target->left == AVL_NIL(avlt)) ? target->right : target->left; /* child may be NIL */
 
 	if (child != AVL_NIL(avlt))
 		child->parent = target->parent;
@@ -406,9 +391,7 @@ void *avl_delete(avltree *avlt, avlnode *node, int keep)
  */
 avlnode *rotate_left(avltree *avlt, avlnode *x)
 {
-	avlnode *y;
-
-	y = x->right; /* child */
+	avlnode* y = x->right; /* child */
 
 	/* tree x */
 	x->right = y->left;
@@ -435,9 +418,7 @@ avlnode *rotate_left(avltree *avlt, avlnode *x)
  */
 avlnode *rotate_right(avltree *avlt, avlnode *x)
 {
-	avlnode *y;
-
-	y = x->left; /* child */
+	avlnode* y = x->left; /* child */
 
 	/* tree x */
 	x->left = y->right;
@@ -470,8 +451,7 @@ avlnode *fix_insert_leftimbalance(avltree *avlt, avlnode *p)
 		p = rotate_right(avlt, p);
 		p->bf = p->right->bf = 0;
 	} else { /* 1, -1 */
-		int oldbf;
-		oldbf = p->left->right->bf;
+		int oldbf = p->left->right->bf;
 		rotate_left(avlt, p->left);
 		p = rotate_right(avlt, p);
 		p->bf = 0;
@@ -498,8 +478,7 @@ avlnode *fix_insert_rightimbalance(avltree *avlt, avlnode *p)
 		p = rotate_left(avlt, p);
 		p->bf = p->left->bf = 0;
 	} else { /* -1, 1 */
-		int oldbf;
-		oldbf = p->right->left->bf;
+		int oldbf = p->right->left->bf;
 		rotate_right(avlt, p->right);
 		p = rotate_left(avlt, p);
 		p->bf = 0;
@@ -530,8 +509,7 @@ avlnode *fix_delete_leftimbalance(avltree *avlt, avlnode *p)
 		p->bf = 1;
 		p->right->bf = -1;
 	} else if (p->left->bf == 1) {
-		int oldbf;
-		oldbf = p->left->right->bf;
+		int oldbf = p->left->right->bf;
 		rotate_left(avlt, p->left);
 		p = rotate_right(avlt, p);
 		p->bf = 0;
@@ -562,8 +540,7 @@ avlnode *fix_delete_rightimbalance(avltree *avlt, avlnode *p)
 		p->bf = -1;
 		p->left->bf = 1;
 	} else if (p->right->bf == -1) {
-		int oldbf;
-		oldbf = p->right->left->bf;
+		int oldbf = p->right->left->bf;
 		rotate_right(avlt, p->right);
 		p = rotate_left(avlt, p);
 		p->bf = 0;
@@ -603,23 +580,21 @@ int check_order(avltree *avlt, avlnode *n, void *min, void *max)
  */
 int check_height(avltree *avlt, avlnode *n)
 {
-	int lh, rh, cmp;
-
 	if (n == AVL_NIL(avlt))
 		return 0;
 
-	lh = check_height(avlt, n->left);
+	int lh = check_height(avlt, n->left);
 	if (lh < 0)
 		return lh;
-	
-	rh = check_height(avlt, n->right);
+
+	int rh = check_height(avlt, n->right);
 	if (rh < 0)
 		return rh;
-	
-	cmp = rh - lh;
+
+	int cmp = rh - lh;
 	if (cmp < -1 || cmp > 1 || cmp != n->bf) /* check recomputed/cached balance factor */
 		return -1;
-	
+
 	return 1 + ((lh > rh) ? lh : rh);
 }
 
@@ -628,15 +603,15 @@ int check_height(avltree *avlt, avlnode *n)
  */
 void print(avltree *avlt, avlnode *n, void (*print_func)(void *), int depth, const char *label)
 {
-	if (n != AVL_NIL(avlt)) {
-		print(avlt, n->right, print_func, depth + 1, "R");
-		printf("%*s", 8 * depth, "");
-		if (label)
-			printf("%s: ", label);
-		print_func(n->data);
-		printf(" (%s%d)\n", (n->bf >= 0) ? "+" : "", n->bf);
-		print(avlt, n->left, print_func, depth + 1, "L");
-	}
+	if (n == AVL_NIL(avlt))
+		return;
+	print(avlt, n->right, print_func, depth + 1, "R");
+	printf("%*s", 8 * depth, "");
+	if (label)
+		printf("%s: ", label);
+	print_func(n->data);
+	printf(" (%s%d)\n", (n->bf >= 0) ? "+" : "", n->bf);
+	print(avlt, n->left, print_func, depth + 1, "L");
 }
 
 /*
@@ -644,10 +619,11 @@ void print(avltree *avlt, avlnode *n, void (*print_func)(void *), int depth, con
  */
 void destroy(avltree *avlt, avlnode *n)
 {
-	if (n != AVL_NIL(avlt)) {
-		destroy(avlt, n->left);
-		destroy(avlt, n->right);
-		avlt->destroy(n->data);
-		free(n);
-	}
+	if (n == AVL_NIL(avlt))
+		return;
+	destroy(avlt, n->left);
+	destroy(avlt, n->right);
+	avlt->destroy(n->data);
+	free(n);
 }
+
