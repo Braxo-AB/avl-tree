@@ -270,24 +270,34 @@ avlnode *avl_insert(avltree *avlt, void *data)
  * delete node
  * return NULL if keep is zero (already freed)
  */
-void *avl_delete(avltree *avlt, avlnode *node, int keep)
+
+void*
+avl_delete_and_continue(
+	avltree* avlt,
+	avlnode* node,
+	int keep,
+	avlnode** next_p)
 {
 	avlnode *target;
 	void* data = node->data;
+	avlnode* successor = avl_successor(avlt, node);
 
 	/* choose node's in-order successor if it has two children */
-	
 	if (node->left == AVL_NIL(avlt) || node->right == AVL_NIL(avlt)) {
 		target = node;
+		if (next_p)
+			*next_p = successor;
 
 		#ifdef AVL_MIN
 		if (avlt->min == target)
-			avlt->min = avl_successor(avlt, target); /* deleted, thus min = successor */
+			avlt->min = successor; /* deleted, thus min = successor */
 		#endif
 	} else {
-		target = avl_successor(avlt, node); /* node->right must not be NIL, thus move down */
+		target = successor; /* node->right must not be NIL, thus move down */
 
 		node->data = target->data; /* data swapped */
+		if (next_p)
+			*next_p = node;
 
 		#ifdef AVL_MIN
 		/* if min == node, then min = successor = node (swapped), thus idle */
@@ -386,6 +396,11 @@ void *avl_delete(avltree *avlt, avlnode *node, int keep)
 	}
 
 	return data;
+}
+
+void *avl_delete(avltree *avlt, avlnode *node, int keep)
+{
+	return avl_delete_and_continue(avlt, node, keep, NULL);
 }
 
 /*

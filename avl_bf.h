@@ -72,6 +72,13 @@ void avl_print(avltree *avlt, void (*print_func)(void *));
 avlnode *avl_insert(avltree *avlt, void *data);
 void *avl_delete(avltree *avlt, avlnode *node, int keep);
 
+void*
+avl_delete_and_continue(
+	avltree* avlt,
+	avlnode* node,
+	int keep,
+	avlnode** next_p);
+
 int avl_check_order(avltree *avlt, void *min, void *max);
 int avl_check_height(avltree *avlt);
 
